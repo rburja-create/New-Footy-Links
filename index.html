@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Footy Links Directory</title>
+    <title>Footy Directory</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --accent: #38bdf8;
             --text: #f1f5f9;
         }
@@ -16,55 +17,80 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            background-color: var(--bg);
-            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
             color: var(--text);
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
         }
 
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 900px; margin: 0 auto; }
 
-        header { text-align: center; margin-bottom: 40px; padding-top: 20px; }
-        h1 { font-size: 2.5rem; letter-spacing: -1px; color: var(--accent); }
+        header { text-align: center; margin: 30px 0; }
+        h1 { font-size: 2.2rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
 
-        /* Grid Layout */
+        /* Search Bar */
+        .search-box {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        #searchBar {
+            width: 100%;
+            padding: 15px 20px 15px 45px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+        }
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+        }
+
+        /* Grid Setup */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
         }
 
-        .category-section {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+        }
+
+        .category-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
             padding: 20px;
-            height: fit-content;
+            backdrop-filter: blur(16px);
         }
 
         .category-title {
-            font-size: 1.2rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            color: var(--accent);
             margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--accent);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .link-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(255, 255, 255, 0.05);
-            margin-bottom: 10px;
-            padding: 14px;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 8px;
+            padding: 16px;
+            border-radius: 12px;
             text-decoration: none;
             color: var(--text);
             transition: all 0.2s ease;
@@ -74,63 +100,98 @@
         .link-item:hover {
             background: rgba(56, 189, 248, 0.1);
             border-color: var(--accent);
-            transform: translateX(5px);
+            transform: scale(1.02);
         }
 
-        .link-item span { font-weight: 500; }
-        .link-item i { color: var(--accent); opacity: 0.7; }
-
-        #loader { text-align: center; font-size: 1.2rem; margin-top: 50px; }
+        .link-item span { font-weight: 500; font-size: 0.95rem; }
+        
+        #loader { text-align: center; padding: 50px; opacity: 0.7; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1 id="page-title">Footy Links</h1>
+        <h1 id="page-title">Footy Directory</h1>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchBar" placeholder="Find a form or sheet..." onkeyup="filterLinks()">
+        </div>
     </header>
 
-    <div id="loader">Gathering links...</div>
+    <div id="loader"><i class="fas fa-spinner fa-spin"></i> Loading Sheets...</div>
     <div id="main-grid" class="grid"></div>
 </div>
 
 <script>
-    // Replace this with your NEW deployed WebApp URL
-    const API_URL = "YOUR_NEW_WEBAPP_URL_HERE";
+    // Replace with your actual Deployed Web App URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbzvaaAlI2qHVxduhtdTQxJyKNUnx1xyKfIPBayjzTkh5uzQxuW7LEBREthTKeQSWFTTgg/exec";
 
-    async function fetchLinks() {
+    async function init() {
         try {
-            const response = await fetch(API_URL);
-            const json = await response.json();
+            const res = await fetch(API_URL);
+            const json = await res.json();
             
-            document.getElementById('loader').style.display = 'none';
+            document.getElementById('loader').classList.add('hidden');
+            if(json.pageTitle) document.getElementById('page-title').innerText = json.pageTitle;
+
             const grid = document.getElementById('main-grid');
 
-            // Loop through each Header/Category
             for (const [category, links] of Object.entries(json.data)) {
-                const section = document.createElement('div');
-                section.className = 'category-section';
+                const card = document.createElement('div');
+                card.className = 'category-card';
                 
                 let linksHtml = links.map(link => `
                     <a href="${link.url}" target="_blank" class="link-item">
                         <span>${link.name}</span>
-                        <i class="fas fa-chevron-right"></i>
+                        <i class="fas fa-external-link-alt" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </a>
                 `).join('');
 
-                section.innerHTML = `
-                    <h2 class="category-title"><i class="fas fa-futbol"></i> ${category}</h2>
+                card.innerHTML = `
+                    <div class="category-title"><i class="fas fa-folder-open"></i> ${category}</div>
                     <div class="links-list">${linksHtml}</div>
                 `;
-                
-                grid.appendChild(section);
+                grid.appendChild(card);
             }
         } catch (e) {
-            document.getElementById('loader').innerText = "Error loading data.";
+            document.getElementById('loader').innerHTML = "⚠️ Error loading directory.";
         }
     }
 
-    fetchLinks();
+    function filterLinks() {
+        const term = document.getElementById('searchBar').value.toLowerCase();
+        const items = document.querySelectorAll('.link-item');
+        
+        items.forEach(item => {
+            const text = item.innerText.toLowerCase();
+            if(text.includes(term)) {
+                item.style.display = "flex";
+            } else {
+                item.style.display = "none";
+            }
+        });
+
+        // Hide empty categories
+        document.querySelectorAll('.category-card').forEach(card => {
+            const visibleLinks = card.querySelectorAll('.link-item[style="display: flex;"]').length;
+            const allLinks = card.querySelectorAll('.link-item').length;
+            const noStyleLinks = card.querySelectorAll('.link-item:not([style])').length;
+            
+            // Handle the initial state vs filtered state
+            if (term === "") {
+                 card.classList.remove('hidden');
+                 card.querySelectorAll('.link-item').forEach(li => li.style.display = "flex");
+            } else if (visibleLinks === 0) {
+                card.classList.add('hidden');
+            } else {
+                card.classList.remove('hidden');
+            }
+        });
+    }
+
+    init();
 </script>
 </body>
 </html>
