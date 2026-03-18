@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Footy Links Directory</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 40px; padding-top: 20px; }
+        h1 { font-size: 2.5rem; letter-spacing: -1px; color: var(--accent); }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .category-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .category-title {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            padding: 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .link-item:hover {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .link-item span { font-weight: 500; }
+        .link-item i { color: var(--accent); opacity: 0.7; }
+
+        #loader { text-align: center; font-size: 1.2rem; margin-top: 50px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1 id="page-title">Footy Links</h1>
+    </header>
+
+    <div id="loader">Gathering links...</div>
+    <div id="main-grid" class="grid"></div>
+</div>
+
+<script>
+    // Replace this with your NEW deployed WebApp URL
+    const API_URL = "YOUR_NEW_WEBAPP_URL_HERE";
+
+    async function fetchLinks() {
+        try {
+            const response = await fetch(API_URL);
+            const json = await response.json();
+            
+            document.getElementById('loader').style.display = 'none';
+            const grid = document.getElementById('main-grid');
+
+            // Loop through each Header/Category
+            for (const [category, links] of Object.entries(json.data)) {
+                const section = document.createElement('div');
+                section.className = 'category-section';
+                
+                let linksHtml = links.map(link => `
+                    <a href="${link.url}" target="_blank" class="link-item">
+                        <span>${link.name}</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                `).join('');
+
+                section.innerHTML = `
+                    <h2 class="category-title"><i class="fas fa-futbol"></i> ${category}</h2>
+                    <div class="links-list">${linksHtml}</div>
+                `;
+                
+                grid.appendChild(section);
+            }
+        } catch (e) {
+            document.getElementById('loader').innerText = "Error loading data.";
+        }
+    }
+
+    fetchLinks();
+</script>
+</body>
+</html>
