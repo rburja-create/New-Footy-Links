@@ -12,75 +12,91 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --accent: #38bdf8;
             --text: #f1f5f9;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
             background: radial-gradient(circle at top right, #1e293b, #0f172a);
             color: var(--text);
             min-height: 100vh;
             padding: 15px;
+            line-height: 1.6;
         }
 
         .container { max-width: 900px; margin: 0 auto; }
 
-        header { text-align: center; margin: 30px 0; }
-        h1 { font-size: 2.2rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
+        header { text-align: center; margin: 40px 0; }
+        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 25px; }
 
-        /* Search Bar */
+        /* Search Interface */
         .search-box {
             position: relative;
-            margin-bottom: 30px;
+            max-width: 500px;
+            margin: 0 auto 40px auto;
         }
         #searchBar {
             width: 100%;
             padding: 15px 20px 15px 45px;
             background: var(--glass);
             border: 1px solid var(--glass-border);
-            border-radius: 12px;
+            border-radius: 16px;
             color: white;
             font-size: 16px;
             backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        #searchBar:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
         .search-box i {
             position: absolute;
-            left: 15px;
+            left: 18px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--accent);
+            font-size: 18px;
         }
 
-        /* Grid Setup */
+        /* Grid Layout */
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
+            gap: 25px;
         }
 
         @media (max-width: 600px) {
             .grid { grid-template-columns: 1fr; }
-            h1 { font-size: 1.8rem; }
+            h1 { font-size: 2rem; }
         }
 
         .category-card {
             background: var(--glass);
             border: 1px solid var(--glass-border);
-            border-radius: 18px;
-            padding: 20px;
+            border-radius: 20px;
+            padding: 24px;
             backdrop-filter: blur(16px);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
         }
 
         .category-title {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             color: var(--accent);
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
         }
 
         .link-item {
@@ -88,25 +104,34 @@
             align-items: center;
             justify-content: space-between;
             background: rgba(255, 255, 255, 0.03);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             padding: 16px;
             border-radius: 12px;
             text-decoration: none;
             color: var(--text);
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid transparent;
         }
 
         .link-item:hover {
             background: rgba(56, 189, 248, 0.1);
             border-color: var(--accent);
-            transform: scale(1.02);
+            transform: translateX(8px);
         }
 
-        .link-item span { font-weight: 500; font-size: 0.95rem; }
+        .link-item span { font-weight: 500; font-size: 0.95rem; flex: 1; padding-right: 10px; }
         
-        #loader { text-align: center; padding: 50px; opacity: 0.7; }
-        .hidden { display: none; }
+        #loader { text-align: center; padding: 80px; font-size: 1.2rem; }
+        .hidden { display: none !important; }
+        
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #f87171;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -116,81 +141,105 @@
         <h1 id="page-title">Footy Directory</h1>
         <div class="search-box">
             <i class="fas fa-search"></i>
-            <input type="text" id="searchBar" placeholder="Find a form or sheet..." onkeyup="filterLinks()">
+            <input type="text" id="searchBar" placeholder="Search links or sheets..." onkeyup="filterLinks()">
         </div>
     </header>
 
-    <div id="loader"><i class="fas fa-spinner fa-spin"></i> Loading Sheets...</div>
+    <div id="loader">
+        <i class="fas fa-circle-notch fa-spin"></i> Loading Data...
+    </div>
+
     <div id="main-grid" class="grid"></div>
 </div>
 
 <script>
-    // Replace with your actual Deployed Web App URL
-    const API_URL = "https://script.google.com/macros/s/AKfycbzvaaAlI2qHVxduhtdTQxJyKNUnx1xyKfIPBayjzTkh5uzQxuW7LEBREthTKeQSWFTTgg/exec";
+    // The specific Web App URL you provided
+    const API_URL = "https://script.google.com/macros/s/AKfycbzukFIWhC5C8ArjKfRMFcc-qZdp6zOQocVENY3jJtIoSSMigUn99xGYQyAVyjWzK22n/exec";
 
     async function init() {
+        const grid = document.getElementById('main-grid');
+        const loader = document.getElementById('loader');
+
         try {
-            const res = await fetch(API_URL);
-            const json = await res.json();
+            // Using 'redirect: follow' is critical for Google Apps Script Web Apps
+            const response = await fetch(API_URL, {
+                method: 'GET',
+                redirect: 'follow'
+            });
+
+            if (!response.ok) throw new Error('Failed to reach the Google Script.');
             
-            document.getElementById('loader').classList.add('hidden');
+            const json = await response.json();
+            
+            if (json.error) throw new Error(json.error);
+
+            loader.classList.add('hidden');
             if(json.pageTitle) document.getElementById('page-title').innerText = json.pageTitle;
 
-            const grid = document.getElementById('main-grid');
+            renderLinks(json.data);
 
-            for (const [category, links] of Object.entries(json.data)) {
-                const card = document.createElement('div');
-                card.className = 'category-card';
-                
-                let linksHtml = links.map(link => `
-                    <a href="${link.url}" target="_blank" class="link-item">
-                        <span>${link.name}</span>
-                        <i class="fas fa-external-link-alt" style="font-size: 0.8rem; opacity: 0.5;"></i>
-                    </a>
-                `).join('');
-
-                card.innerHTML = `
-                    <div class="category-title"><i class="fas fa-folder-open"></i> ${category}</div>
-                    <div class="links-list">${linksHtml}</div>
-                `;
-                grid.appendChild(card);
-            }
         } catch (e) {
-            document.getElementById('loader').innerHTML = "⚠️ Error loading directory.";
+            console.error(e);
+            loader.innerHTML = `
+                <div class="error-msg">
+                    <i class="fas fa-exclamation-triangle"></i><br><br>
+                    <strong>Error Loading Directory</strong><br>
+                    ${e.message}<br><br>
+                    <small>Check your internet or verify the Web App deployment.</small>
+                </div>
+            `;
+        }
+    }
+
+    function renderLinks(data) {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = ''; 
+
+        // entries handles the { "Category": [links...] } structure
+        for (const [category, links] of Object.entries(data)) {
+            const card = document.createElement('div');
+            card.className = 'category-card';
+            
+            let linksHtml = links.map(link => `
+                <a href="${link.url}" target="_blank" class="link-item">
+                    <span>${link.name}</span>
+                    <i class="fas fa-external-link-alt" style="font-size: 0.8rem; opacity: 0.4;"></i>
+                </a>
+            `).join('');
+
+            card.innerHTML = `
+                <div class="category-title"><i class="fas fa-futbol"></i> ${category}</div>
+                <div class="links-list">${linksHtml}</div>
+            `;
+            grid.appendChild(card);
         }
     }
 
     function filterLinks() {
         const term = document.getElementById('searchBar').value.toLowerCase();
         const items = document.querySelectorAll('.link-item');
+        const cards = document.querySelectorAll('.category-card');
         
+        // Filter individual links
         items.forEach(item => {
             const text = item.innerText.toLowerCase();
-            if(text.includes(term)) {
-                item.style.display = "flex";
-            } else {
-                item.style.display = "none";
-            }
+            item.style.display = text.includes(term) ? "flex" : "none";
         });
 
-        // Hide empty categories
-        document.querySelectorAll('.category-card').forEach(card => {
-            const visibleLinks = card.querySelectorAll('.link-item[style="display: flex;"]').length;
-            const allLinks = card.querySelectorAll('.link-item').length;
-            const noStyleLinks = card.querySelectorAll('.link-item:not([style])').length;
-            
-            // Handle the initial state vs filtered state
+        // Hide cards that have no visible links
+        cards.forEach(card => {
+            const visibleCount = card.querySelectorAll('.link-item[style="display: flex;"]').length;
+            // If search is empty, show everything, otherwise show only if matches found
             if (term === "") {
-                 card.classList.remove('hidden');
-                 card.querySelectorAll('.link-item').forEach(li => li.style.display = "flex");
-            } else if (visibleLinks === 0) {
-                card.classList.add('hidden');
-            } else {
                 card.classList.remove('hidden');
+                card.querySelectorAll('.link-item').forEach(li => li.style.display = "flex");
+            } else {
+                card.classList.toggle('hidden', visibleCount === 0);
             }
         });
     }
 
+    // Run the app
     init();
 </script>
 </body>
